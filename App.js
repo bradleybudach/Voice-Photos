@@ -8,7 +8,9 @@ import { StorageAccessFramework } from 'expo-file-system';
 import { NavigationContainer, useIsFocused } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
-import { hello } from './modules/exif-writer';
+import * as Haptics from 'expo-haptics';
+//import { hello } from './modules/exif-writer';
+
 
 // globals:
 const FILE_DIRECTORY = FileSystem.documentDirectory + "voicePhotos/";
@@ -66,6 +68,7 @@ const HomeScreen = ({ navigation }) => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedAudio, setCapturedAudio] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(0);
+  const [takingPicture, setTakingPicture] = useState(false);
   const [zoomFadeoutTime, setZoomFadeoutTime] = useState(2000);
 
   useEffect(() => {
@@ -73,6 +76,9 @@ const HomeScreen = ({ navigation }) => {
       if (imagePreviewVisible) {
         __retakePicture();
       } else {
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Error
+        );
         Alert.alert('Hold on!', 'Are you sure you want to exit the app?', [
           {
             text: 'Cancel',
@@ -95,7 +101,7 @@ const HomeScreen = ({ navigation }) => {
 
   const isFocused = useIsFocused();
 
-  let camera = null;
+  const camera = useRef(null);
 
   // Commands:
   let recording = null;
@@ -141,25 +147,27 @@ const HomeScreen = ({ navigation }) => {
   }
 
   const __takePicture = async () => {
-    if (!camera) return;
+    if (!camera) { return; }
+
+    setTakingPicture(true);
+    Haptics.selectionAsync();
 
     const location = await Location.getCurrentPositionAsync({
-      accuracy: 5,
+      accuracy: 6,
     });
 
-    //console.log(location);
-
-    const photo = await camera.takePictureAsync({
+    const photo = await camera.current.takePictureAsync({
       exif: true,
-      additionalExif: 
+      additionalExif:
       {
         "GPSLatitude": location.coords.latitude,
         "GPSLongitude": location.coords.longitude,
         "GPSAltitude": location.coords.altitude,
       }
     });
+    //console.log(location);
 
-    const base64String = 'data:image/jpg;base64,' + photo.base64;
+    
 
     /*
     photo.exif.GPSLatitude = location.coords.latitude;
@@ -172,8 +180,11 @@ const HomeScreen = ({ navigation }) => {
     photo.exif.GPSAltitudeRef = 0;*/
 
     console.log(photo.exif);
+
     setImagePreviewVisible(true);
     setCapturedImage(photo);
+    setTakingPicture(false);
+    setZoomLevel(0);
   }
 
   const __retakePicture = () => {
@@ -235,9 +246,7 @@ const HomeScreen = ({ navigation }) => {
           <PinchGestureHandler onGestureEvent={__onPinchEvent}>
             <TapGestureHandler onHandlerStateChange={__doubleTapEvent} numberOfTaps={2}>
               <View style={styles.imageContainer}>
-                {isFocused && <Camera ratio='16:9' zoom={zoomLevel} style={{ flex: 1 }} type={cameraType} ref={(r) => {
-                  camera = r;
-                }}>
+                {isFocused && <Camera ref={camera} ratio='16:9' zoom={zoomLevel} style={{ flex: 1 }} type={cameraType}>
                   <View style={styles.zoomBarContainer}>
                     <View style={styles.zoomBar} height={zoomLevel * 100 + "%"}></View>
                   </View>
@@ -246,12 +255,14 @@ const HomeScreen = ({ navigation }) => {
                     top: 15,
                     left: 15,
                   }]} onPress={() => {
+                    setZoomLevel(0);
                     navigation.navigate('Files');
                   }}><Text style={styles.text}>Files</Text></TouchableOpacity>
                 </Camera>}
               </View>
             </TapGestureHandler>
           </PinchGestureHandler>
+
 
           <View style={styles.bottomBorder}>
             <View
@@ -263,13 +274,7 @@ const HomeScreen = ({ navigation }) => {
             >
               <TouchableOpacity
                 onPress={__takePicture}
-                style={{
-                  width: 70,
-                  height: 70,
-                  bottom: 0,
-                  borderRadius: 50,
-                  backgroundColor: '#fff',
-                }}
+                style={takingPicture ? styles.takePictureButtonIsTaking : styles.takePictureButton}
               />
             </View>
           </View></>
@@ -966,6 +971,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
   },
+  takePictureButton: {
+    width: 70,
+    height: 70,
+    bottom: 0,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+  },
+  takePictureButtonIsTaking: {
+    width: 70,
+    height: 70,
+    bottom: 0,
+    borderRadius: 50,
+    backgroundColor: 'black',
+    borderWidth: 6,
+    borderColor: 'white',
+  }
 })
 
 /**

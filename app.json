@@ -21,10 +21,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#202020"
-      }
+      },
+      "package": "com.budachb.Voice_Photos"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b448ce93-9f3a-4de0-87a0-c61840616db1"
+      }
     }
   }
 }
