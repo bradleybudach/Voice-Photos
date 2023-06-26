@@ -9,8 +9,7 @@ import { NavigationContainer, useIsFocused } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-//import { hello } from './modules/exif-writer';
-
+import { writeExif } from './modules/exif-writer';
 
 // globals:
 const FILE_DIRECTORY = FileSystem.documentDirectory + "voicePhotos/";
@@ -156,31 +155,9 @@ const HomeScreen = ({ navigation }) => {
       accuracy: 6,
     });
 
-    const photo = await camera.current.takePictureAsync({
-      exif: true,
-      additionalExif:
-      {
-        "GPSLatitude": location.coords.latitude,
-        "GPSLongitude": location.coords.longitude,
-        "GPSAltitude": location.coords.altitude,
-      }
-    });
-    //console.log(location);
+    const photo = await camera.current.takePictureAsync();
 
-    
-
-    /*
-    photo.exif.GPSLatitude = location.coords.latitude;
-    photo.exif.GPSLatitudeRef = "N";
-    
-    photo.exif.GPSLongitude = location.coords.longitude;
-    photo.exif.GPSLongitudeRef = "W";
-
-    photo.exif.GPSAltitude = location.coords.altitude;
-    photo.exif.GPSAltitudeRef = 0;*/
-
-    console.log(photo.exif);
-
+    writeExif(photo.uri, location.coords.latitude, location.coords.longitude, location.coords.altitude);
     setImagePreviewVisible(true);
     setCapturedImage(photo);
     setTakingPicture(false);

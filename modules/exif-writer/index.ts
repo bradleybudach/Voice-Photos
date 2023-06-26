@@ -5,12 +5,13 @@ import { NativeModulesProxy, EventEmitter, Subscription } from 'expo-modules-cor
 import ExifWriterModule from './src/ExifWriterModule';
 import ExifWriterView from './src/ExifWriterView';
 import { ChangeEventPayload, ExifWriterViewProps } from './src/ExifWriter.types';
+import { Double } from 'react-native/Libraries/Types/CodegenTypes';
 
 // Get the native constant value.
 export const PI = ExifWriterModule.PI;
 
-export function hello(): string {
-  return ExifWriterModule.hello();
+export function writeExif(uri: string, latitude : Double, longitude : Double, altitude : Double): string {
+  return ExifWriterModule.writeExif(uri, latitude, longitude, altitude);
 }
 
 export async function setValueAsync(value: string) {

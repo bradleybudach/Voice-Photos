@@ -87,5 +87,8 @@ repositories {
 
 dependencies {
   implementation project(':expo-modules-core')
+
+  api "androidx.exifinterface:exifinterface:1.0.0"
+
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
 }

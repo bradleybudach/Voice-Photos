@@ -2,6 +2,10 @@ package expo.modules.exifwriter
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import androidx.exifinterface.media.ExifInterface
+import android.net.Uri
+import java.io.File
+import java.util.*
 
 class ExifWriterModule : Module() {
   // Each module class must implement the definition function. The definition consists of components
@@ -22,8 +26,9 @@ class ExifWriterModule : Module() {
     Events("onChange")
 
     // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
+    Function("writeExif") { uri: String, latitude : Double, longitude : Double, altitude : Double ->
+      writeLocationExif(uri, latitude, longitude, altitude);
+      "exif saved"
     }
 
     // Defines a JavaScript function that always returns a Promise and whose native code
@@ -43,5 +48,19 @@ class ExifWriterModule : Module() {
         println(prop)
       }
     }
+  }
+
+  private fun writeLocationExif(uri: String, latitude : Double, longitude : Double, altitude : Double): Boolean {
+    try {
+        val imageUri = Uri.parse(uri)
+        val exifInterface = ExifInterface(imageUri.getPath().orEmpty())
+        exifInterface.setLatLong(latitude, longitude)
+        exifInterface.setAltitude(altitude)
+        exifInterface.saveAttributes()
+        return true
+      } catch (e : Exception) {
+        e.printStackTrace()
+        return false
+      }
   }
 }
