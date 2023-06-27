@@ -32,7 +32,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <View style={{ padding: 40 }}>
-          <Text style={{ textAlign: 'center', color: 'white', marginBottom: 20, fontSize: 18 }}>
+          <Text style={{ textAlign: 'center', color: theme.white, marginBottom: 20, fontSize: 18 }}>
             To use this app, we need your permission to show the camera, record audio, and access your location.
           </Text>
           <Button onPress={() => {
@@ -211,17 +211,21 @@ const HomeScreen = ({ navigation }) => {
           <PinchGestureHandler onGestureEvent={__onPinchEvent}>
             <View style={styles.imageContainer}>
               {isFocused && <Camera ref={camera} ratio='16:9' zoom={zoomLevel} style={{ flex: 1 }} type={CameraType.back}>
-                <View style={styles.zoomBarContainer}>
+                <View style={styles.zoomBarContainer} opacity={zoomLevel > 0 ? 1 : 0}>
                   <View style={styles.zoomBar} height={zoomLevel * 100 + "%"}></View>
                 </View>
                 <TouchableOpacity style={[styles.button, {
                   position: 'absolute',
                   top: 15,
                   left: 15,
+                  width: 'auto',
+                  height: 'auto',
+                  padding: 2,
+                  backgroundColor: theme.gold
                 }]} onPress={() => {
                   setZoomLevel(0);
                   navigation.navigate('Files');
-                }}><Text style={styles.text}>Files</Text></TouchableOpacity>
+                }}><ImageBackground source={require('./assets/filesIcon.png')} style={{width: 60, height: 50}}/></TouchableOpacity>
               </Camera>}
             </View>
           </PinchGestureHandler>
@@ -284,6 +288,7 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
   const __stopPlayback = async () => {
     if (currentSound) { // if there is already a sound loaded, remove it
       await currentSound.sound.stopAsync();
+      setIsPlaybackPaused(true);
       setPlaybackPercent(0);
       setCurrentSound(null);
     }
@@ -341,19 +346,18 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
                   width: 50,
                   height: 50,
                   margin: 10,
-                  backgroundColor: 'white',
+                  padding: 4,
+                  backgroundColor: theme.gold,
                   borderRadius: 50,
                   justifyContent: 'center',
                   alignItems: 'center',
-                  borderWidth: 4,
-                  borderColor: 'black'
                 }}>
                 <ImageBackground source={isPlaybackPaused ? require('./assets/playIcon.png') : require('./assets/stopIcon.png')} style={{ width: '100%', height: '100%' }} />
               </TouchableOpacity>
             </View>
             <View style={{ flex: 7, alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{ backgroundColor: 'gray', width: '90%', height: 20, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: 'black' }}>
-                <View width={playbackPercent + '%'} height={'100%'} style={{ backgroundColor: 'white' }} />
+              <View style={{ backgroundColor: theme.white, width: '90%', height: 20, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: theme.gray }}>
+                <View width={playbackPercent + '%'} height={'100%'} style={{ backgroundColor: theme.gold }} />
               </View>
             </View>
           </View> : <></>
@@ -366,7 +370,7 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
               __stopPlayback();
               retakePicture();
             }}
-            style={[styles.button, { flex: 1, alignSelf: 'center', margin: 20 }]}>
+            style={[styles.button, { flex: 1, alignSelf: 'center', marginRight: 25 }]}>
             <Text style={styles.text}>Retake</Text>
           </TouchableOpacity> : <></>
         }
@@ -381,9 +385,9 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
             justifyContent: 'center',
             alignItems: 'center',
             alignSelf: 'center',
-            borderColor: 'gray',
+            backgroundColor: theme.white,
             borderWidth: 4,
-            backgroundColor: '#fff',
+            borderColor: theme.gray
           }}
         ><ImageBackground source={isRecording ? require('./assets/stopIcon.png') : require('./assets/recordIcon.png')} style={{ width: '100%', height: '100%' }} /></TouchableOpacity>
 
@@ -393,7 +397,7 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
               __stopPlayback();
               saveFiles();
             }}
-            style={[styles.button, { flex: 1, alignSelf: 'center', margin: 20 }]}>
+            style={[styles.button, { flex: 1, alignSelf: 'center', marginLeft: 25, backgroundColor: theme.gold }]}>
             <Text style={styles.text}>Save</Text>
           </TouchableOpacity> : <></>
         }
@@ -474,8 +478,11 @@ const FileDisplay = ({ navigation }) => {
 
         return [<View key={key} style={gridStyles.gridTitle}>
           <Text style={styles.text}>{file.replaceAll('.', '/')}</Text>
-          <TouchableOpacity style={{ position: 'absolute', right: 10, backgroundColor: 'red', padding: 5, borderRadius: 10 }} onPress={() => {confirmDeleteDayAlert(file)}}>
-            <Text>Del</Text>
+          <TouchableOpacity style={{ position: 'absolute', right: 50, bottom: 5, borderWidth: 2, borderColor: theme.black, backgroundColor: theme.gold, borderRadius: 50, justifyContent: 'center', alignItems: 'center' }} onPress={() => { __downloadFiles(file) }}>
+            <ImageBackground source={require('./assets/downloadIcon.png')} style={{width: 30, height: 30}}/>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ position: 'absolute', right: 10, bottom: 5, borderWidth: 2, borderColor: theme.black, backgroundColor: theme.red, borderRadius: 50, justifyContent: 'center', alignItems: 'center' }} onPress={() => { confirmDeleteDayAlert(file) }}>
+          <ImageBackground source={require('./assets/deleteIcon.png')} style={{width: 30, height: 30}} />
           </TouchableOpacity>
         </View>,
         await Promise.all(subFile.map(async (file) => {
@@ -499,7 +506,7 @@ const FileDisplay = ({ navigation }) => {
     setImages(newArr);
   }
 
-  const __downloadFiles = async () => {
+  const __downloadFiles = async (day) => {
     const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
     if (!permissions.granted) { return; }
 
@@ -508,63 +515,63 @@ const FileDisplay = ({ navigation }) => {
 
     let localFiles = await FileSystem.readDirectoryAsync(FILE_DIRECTORY);
 
-    if (localFiles.length > 0) {
-      localFiles.map(async (file) => {
-        let newFileString = FILE_DIRECTORY + file + "/";
-        let subFile = await FileSystem.readDirectoryAsync(newFileString);
+    localFiles.forEach(async (file) => {
+      if (day != null && file != day) { // only download one of the days
+        return;
+      }
 
-        subFile.map(async (file) => {
-          if (file.endsWith("jpg")) {
-            const assetUri = (newFileString + file);
-            file = file.replace('.jpg', '');
+      let newFileString = FILE_DIRECTORY + file + "/";
+      let subFile = await FileSystem.readDirectoryAsync(newFileString);
 
-            let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
+      subFile.forEach(async (file) => {
+        if (file.endsWith("jpg")) {
+          const assetUri = (newFileString + file);
 
-            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.jpg')).length == 0) { // if the file doesn't yet exist
-              try {
-                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/jpeg').then(async (uri) => {
-                  await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
-                });
+          let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
+          if (filesAlreadyExisting.filter(f => f.endsWith(file)).length == 0) { // if the file doesn't yet exist
+            try {
+              await StorageAccessFramework.createFileAsync(externalDirURI, file.replace('.jpg', ''), 'image/jpeg').then(async (uri) => {
+                await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
+              });
 
-              } catch (e) {
-                console.log('file creation failed');
-              }
-            } else {
-              console.log('file already exists');
+            } catch (e) {
+              console.log('file creation failed');
             }
           } else {
-            const assetUri = newFileString + file + '/' + file + '.jpg';
-            const audioAssetURI = newFileString + file + '/' + file + '.mp3';
-
-            let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
-
-            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.jpg')).length == 0) { // if the file doesn't yet exist
-              try {
-                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/jpeg').then(async (uri) => {
-                  await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
-                });
-              } catch (e) {
-                console.log(e);
-              }
-            } else {
-              console.log('file already exists');
-            }
-
-            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.mp3')).length == 0) {
-              try {
-                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'audio/mpeg').then(async (uri) => {
-                  await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(audioAssetURI), { encoding: FileSystem.EncodingType.Base64 });
-                });
-              } catch (e) {
-                console.log(e);
-              }
-            } else {
-              console.log('file already exists');
-            }
+            console.log('file already exists');
           }
-        });
+        } else {
+          const assetUri = newFileString + file + '/' + file + '.jpg';
+          const audioAssetURI = newFileString + file + '/' + file + '.mp3';
+
+          let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
+
+          if (filesAlreadyExisting.filter(f => f.endsWith(file + '.jpg')).length == 0) { // if the file doesn't yet exist
+            try {
+              await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/jpeg').then(async (uri) => {
+                await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
+              });
+            } catch (e) {
+              console.log('file creation failed');
+            }
+          } else {
+            console.log('file already exists');
+          }
+
+          if (filesAlreadyExisting.filter(f => f.endsWith(file + '.mp3')).length == 0) {
+            try {
+              await StorageAccessFramework.createFileAsync(externalDirURI, file, 'audio/mpeg').then(async (uri) => {
+                await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(audioAssetURI), { encoding: FileSystem.EncodingType.Base64 });
+              });
+            } catch (e) {
+              console.log('file creation failed');
+            }
+          } else {
+            console.log('file already exists');
+          }
+        }
       });
-    }
+    });
 
 
     const convertFileToB64 = async (localFilePath) => {
@@ -617,12 +624,12 @@ const FileDisplay = ({ navigation }) => {
       [
         {
           text: 'Cancel',
-          onPress: () => { console.log('canceled') } ,
+          onPress: () => { console.log('canceled') },
           style: 'cancel',
         },
         {
           text: 'Delete',
-          onPress: () => {__deleteDay(fileName)},
+          onPress: () => { __deleteDay(fileName) },
           style: 'destructive'
         }
       ],
@@ -668,13 +675,14 @@ const FileDisplay = ({ navigation }) => {
                 left: 15,
               }]} onPress={() => {
                 navigation.navigate('Home');
-              }}><Text style={{ color: 'black', fontSize: 24, fontWeight: 'bold' }}>Back</Text></TouchableOpacity>
+              }}><Text style={{ color: theme.black, fontSize: 24, fontWeight: 'bold' }}>Back</Text></TouchableOpacity>
               {images.length > 0 && <TouchableOpacity style={[styles.button, {
                 position: 'absolute',
                 top: 20,
                 right: 15,
                 width: 175,
-              }]} onPress={__downloadFiles}><Text style={{ color: 'black', fontSize: 24, fontWeight: 'bold' }}>Download All</Text></TouchableOpacity>}
+                backgroundColor: theme.gold
+              }]} onPress={() => {__downloadFiles(null)}}><Text style={{ color: theme.black, fontSize: 24, fontWeight: 'bold' }}>Download All</Text></TouchableOpacity>}
             </View>
             {images.length > 0 ?
               <View style={{ flex: 10 }}>
@@ -685,7 +693,7 @@ const FileDisplay = ({ navigation }) => {
                 </ScrollView>
               </View>
               :
-              <View style={{ flex: 8, justifyContent: 'center', alignItems: 'center' }}><Text style={[styles.text, { color: 'white', margin: 40 }]}>No Voice Photos have been taken.</Text></View>
+              <View style={{ flex: 8, justifyContent: 'center', alignItems: 'center' }}><Text style={[styles.text, { color: theme.white, margin: 40 }]}>No Voice Photos have been taken.</Text></View>
             }
           </>)
       }
@@ -770,6 +778,7 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
   const __stopPlayback = async () => {
     if (currentSound) { // if there is already a sound loaded, remove it
       await currentSound.sound.stopAsync();
+      setIsPlaybackPaused(true);
       setPlaybackPercent(0);
       setCurrentSound(null);
     }
@@ -802,13 +811,13 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
       <PanGestureHandler onHandlerStateChange={panGesture}>
         <View style={styles.imageContainer}>
           <ImageBackground source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }}>
-            <View style={{ alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 0, left: 0, padding: 15, borderBottomEndRadius: 20, backgroundColor: 'rgba(20, 20, 20, 0.6)' }}><Text style={[styles.text, { color: 'white' }]}>Taken at: {hours}:{minutes} {timeCode}</Text></View>
+            <View style={{ alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 0, left: 0, padding: 15, borderBottomEndRadius: 20, backgroundColor: 'rgba(20, 20, 20, 0.6)' }}><Text style={[styles.text, { color: theme.white }]}>Taken at: {hours}:{minutes} {timeCode}</Text></View>
             <TouchableOpacity style={[styles.button, {
               position: 'absolute',
-              top: 25,
+              top: 10,
               right: 15,
-              backgroundColor: 'red',
-            }]} onPress={confirmAlert}><Text style={[styles.text, { color: 'white' }]}>Delete</Text></TouchableOpacity>
+              backgroundColor: theme.red,
+            }]} onPress={confirmAlert}><Text style={[styles.text, { color: theme.black }]}>Delete</Text></TouchableOpacity>
 
             {audioUri ?
               <View style={{ width: '100%', backgroundColor: 'rgba(32, 32, 32, 0.5)', position: 'absolute', bottom: 0, flex: 1, flexDirection: 'row' }}>
@@ -819,19 +828,18 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
                       width: 50,
                       height: 50,
                       margin: 10,
-                      backgroundColor: 'white',
+                      padding: 4,
+                      backgroundColor: theme.gold,
                       borderRadius: 50,
                       justifyContent: 'center',
                       alignItems: 'center',
-                      borderWidth: 4,
-                      borderColor: 'black'
                     }}>
                     <ImageBackground source={isPlaybackPaused ? require('./assets/playIcon.png') : require('./assets/stopIcon.png')} style={{ width: '100%', height: '100%' }} />
                   </TouchableOpacity>
                 </View>
                 <View style={{ flex: 7, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ backgroundColor: 'gray', width: '90%', height: 20, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: 'black' }}>
-                    <View width={playbackPercent + '%'} height={'100%'} style={{ backgroundColor: 'white' }} />
+                  <View style={{ backgroundColor: theme.white, width: '90%', height: 20, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: theme.gray }}>
+                    <View width={playbackPercent + '%'} height={'100%'} style={{ backgroundColor: theme.gold }} />
                   </View>
                 </View>
               </View> : <></>
@@ -841,7 +849,7 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
       </PanGestureHandler>
 
       <View style={styles.bottomBorder}>
-        <TouchableOpacity onPress={() => { __stopPlayback(); goBack(); }} style={[styles.button, { flex: 1, alignSelf: 'center', margin: 20 }]}>
+        <TouchableOpacity onPress={() => { __stopPlayback(); goBack(); }} style={[styles.button, { flex: 1, alignSelf: 'center', margin: 20, backgroundColor: theme.white }]}>
           <Text style={styles.text}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -868,13 +876,21 @@ const VoicePhoto = ({ uri, audio, tapEvent }) => {
   );
 }
 
+const theme = {
+  black: '#000000',
+  white: '#FFFFFF',
+  gray: 'gray',
+  red: '#FF2B00',
+  gold: '#F4C430'
+}
+
 const gridStyles = StyleSheet.create({
   gridTitle: {
-    backgroundColor: 'white',
+    backgroundColor: theme.white,
     width: '100%',
     borderTopEndRadius: 10,
     borderTopStartRadius: 10,
-    borderBottomColor: 'gray',
+    borderBottomColor: theme.gold,
     borderBottomWidth: 4,
     paddingTop: 5,
     paddingBottom: 5,
@@ -901,7 +917,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'black'
+    backgroundColor: theme.black
   },
   imageContainer: {
     flex: 7,
@@ -935,8 +951,8 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
-    color: 'black',
+    backgroundColor: theme.white,
+    color: theme.black,
     width: 80,
     height: 40,
     borderRadius: 10,
@@ -944,10 +960,11 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: theme.black
   },
   bottomBorder: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: theme.black,
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 20,
@@ -957,16 +974,16 @@ const styles = StyleSheet.create({
     height: 70,
     bottom: 0,
     borderRadius: 50,
-    backgroundColor: '#fff',
+    backgroundColor: theme.white,
   },
   takePictureButtonIsTaking: {
     width: 70,
     height: 70,
     bottom: 0,
     borderRadius: 50,
-    backgroundColor: 'black',
+    backgroundColor: theme.black,
     borderWidth: 6,
-    borderColor: 'white',
+    borderColor: theme.white,
   }
 })
 
