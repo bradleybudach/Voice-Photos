@@ -62,13 +62,11 @@ export default function App() {
 }
 
 const HomeScreen = ({ navigation }) => {
-  const [cameraType, setCameraType] = useState(CameraType.back);
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [capturedAudio, setCapturedAudio] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(0);
   const [takingPicture, setTakingPicture] = useState(false);
-  const [zoomFadeoutTime, setZoomFadeoutTime] = useState(2000);
 
   useEffect(() => {
     const backAction = () => { // back button handling
@@ -133,18 +131,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }
 
-  const __doubleTapEvent = event => {
-    if (event.nativeEvent.state === State.ACTIVE) {
-      toggleCameraType();
-    }
-  }
-
-  const toggleCameraType = () => {
-    setCameraType(current =>
-      current === CameraType.back ? CameraType.front : CameraType.back
-    )
-  }
-
   const __takePicture = async () => {
     if (!camera) { return; }
 
@@ -194,7 +180,7 @@ const HomeScreen = ({ navigation }) => {
 
       await FileSystem.moveAsync({ // stores the image in the file
         from: capturedImage.uri,
-        to: voicePhotoFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.png' // stores image with current hour+minute+second as name
+        to: voicePhotoFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current hour+minute+second as name
       });
 
       await FileSystem.moveAsync({ // stores the audio in the file
@@ -204,7 +190,7 @@ const HomeScreen = ({ navigation }) => {
     } else {
       await FileSystem.moveAsync({ // stores the image in the file
         from: capturedImage.uri,
-        to: newFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.png' // stores image with current hour+minute+second as name
+        to: newFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current hour+minute+second as name
       });
     }
 
@@ -221,23 +207,21 @@ const HomeScreen = ({ navigation }) => {
       ) : (
         <>
           <PinchGestureHandler onGestureEvent={__onPinchEvent}>
-            <TapGestureHandler onHandlerStateChange={__doubleTapEvent} numberOfTaps={2}>
-              <View style={styles.imageContainer}>
-                {isFocused && <Camera ref={camera} ratio='16:9' zoom={zoomLevel} style={{ flex: 1 }} type={cameraType}>
-                  <View style={styles.zoomBarContainer}>
-                    <View style={styles.zoomBar} height={zoomLevel * 100 + "%"}></View>
-                  </View>
-                  <TouchableOpacity style={[styles.button, {
-                    position: 'absolute',
-                    top: 15,
-                    left: 15,
-                  }]} onPress={() => {
-                    setZoomLevel(0);
-                    navigation.navigate('Files');
-                  }}><Text style={styles.text}>Files</Text></TouchableOpacity>
-                </Camera>}
-              </View>
-            </TapGestureHandler>
+            <View style={styles.imageContainer}>
+              {isFocused && <Camera ref={camera} ratio='16:9' zoom={zoomLevel} style={{ flex: 1 }} type={CameraType.back}>
+                <View style={styles.zoomBarContainer}>
+                  <View style={styles.zoomBar} height={zoomLevel * 100 + "%"}></View>
+                </View>
+                <TouchableOpacity style={[styles.button, {
+                  position: 'absolute',
+                  top: 15,
+                  left: 15,
+                }]} onPress={() => {
+                  setZoomLevel(0);
+                  navigation.navigate('Files');
+                }}><Text style={styles.text}>Files</Text></TouchableOpacity>
+              </Camera>}
+            </View>
           </PinchGestureHandler>
 
 
@@ -254,7 +238,8 @@ const HomeScreen = ({ navigation }) => {
                 style={takingPicture ? styles.takePictureButtonIsTaking : styles.takePictureButton}
               />
             </View>
-          </View></>
+          </View>
+        </>
       )}
     </GestureHandlerRootView>
   )
@@ -488,13 +473,13 @@ const FileDisplay = ({ navigation }) => {
         return [<View key={key} style={gridStyles.gridTitle}><Text style={styles.text}>{file.replaceAll('.', '/')}</Text></View>,
         await Promise.all(subFile.map(async (file) => {
           key++;
-          if (file.endsWith("png")) {
+          if (file.endsWith("jpg")) {
             const uri = (newFileString + file);
             return (
               <VoicePhoto key={key} uri={uri} tapEvent={__tapEvent} />
             );
           } else {
-            const uri = newFileString + file + '/' + file + '.png';
+            const uri = newFileString + file + '/' + file + '.jpg';
             const audio = newFileString + file + '/' + file + '.mp3';
             return (
               <VoicePhoto key={key} uri={uri} audio={audio} tapEvent={__tapEvent} />
@@ -515,46 +500,22 @@ const FileDisplay = ({ navigation }) => {
     let externalDirURI = permissions.directoryUri;
 
     let localFiles = await FileSystem.readDirectoryAsync(FILE_DIRECTORY);
-    localFiles.sort((a, b) => { // sort newest to oldest
-      let timeA = a.split('.');
-      let timeB = b.split('.');
-
-      if (Math.abs(parseInt(timeB[2]) - parseInt(timeA[2])) > 0) { // compare by year
-        return parseInt(timeB[2]) - parseInt(timeA[2]);
-      } else if (Math.abs(parseInt(timeB[0]) - parseInt(timeA[0])) > 0) { // compare by month
-        return parseInt(timeB[0]) - parseInt(timeA[0]);
-      } else { // compare by day
-        return parseInt(timeB[1]) - parseInt(timeA[1]);
-      }
-    });
 
     if (localFiles.length > 0) {
       localFiles.map(async (file) => {
         let newFileString = FILE_DIRECTORY + file + "/";
         let subFile = await FileSystem.readDirectoryAsync(newFileString);
-        subFile.sort((a, b) => { // sort newest to oldest
-          let timeA = a.split('.');
-          let timeB = b.split('.');
-
-          if (Math.abs(parseInt(timeB[0]) - parseInt(timeA[0])) > 0) { // compare by hours
-            return parseInt(timeB[0]) - parseInt(timeA[0]);
-          } else if (Math.abs(parseInt(timeB[1]) - parseInt(timeA[1])) > 0) { // compare by minutes
-            return parseInt(timeB[1]) - parseInt(timeA[1]);
-          } else { // compare by seconds
-            return parseInt(timeB[2]) - parseInt(timeA[2]);
-          }
-        });
 
         subFile.map(async (file) => {
-          if (file.endsWith("png")) {
+          if (file.endsWith("jpg")) {
             const assetUri = (newFileString + file);
-            file = file.replace('.png', '');
+            file = file.replace('.jpg', '');
 
             let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
 
-            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.png')).length == 0) { // if the file doesn't yet exist
+            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.jpg')).length == 0) { // if the file doesn't yet exist
               try {
-                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/png').then(async (uri) => {
+                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/jpeg').then(async (uri) => {
                   await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
                 });
 
@@ -565,14 +526,14 @@ const FileDisplay = ({ navigation }) => {
               console.log('file already exists');
             }
           } else {
-            const assetUri = newFileString + file + '/' + file + '.png';
+            const assetUri = newFileString + file + '/' + file + '.jpg';
             const audioAssetURI = newFileString + file + '/' + file + '.mp3';
 
             let filesAlreadyExisting = await StorageAccessFramework.readDirectoryAsync(externalDirURI);
 
-            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.png')).length == 0) { // if the file doesn't yet exist
+            if (filesAlreadyExisting.filter(f => f.endsWith(file + '.jpg')).length == 0) { // if the file doesn't yet exist
               try {
-                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/png').then(async (uri) => {
+                await StorageAccessFramework.createFileAsync(externalDirURI, file, 'image/jpeg').then(async (uri) => {
                   await StorageAccessFramework.writeAsStringAsync(uri, await convertFileToB64(assetUri), { encoding: FileSystem.EncodingType.Base64 });
                 });
               } catch (e) {
