@@ -11,8 +11,9 @@ import { Audio } from "expo-av";
 import * as FileSystem from 'expo-file-system';
 
 const FILE_DIRECTORY = FileSystem.documentDirectory + "voicePhotos/";
+const ZOOM_SPEED = 12;
 
-const HomeScreen = ({ navigation }) => {
+export const HomeScreen = ({ navigation }) => {
     const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
     const [capturedImage, setCapturedImage] = useState(null);
     const [capturedAudio, setCapturedAudio] = useState(null);
@@ -70,15 +71,10 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const __onPinchEvent = event => {
-        let scale = event.nativeEvent.scale;
         let velocity = event.nativeEvent.velocity;
 
         if (Math.abs(velocity) > 0.0003) {
-            if (velocity > 0) {
-                setZoomLevel((zoomLevel + scale * 0.05).clamp(0, 1));
-            } else {
-                setZoomLevel((zoomLevel - scale * 0.07).clamp(0, 1));
-            }
+            setZoomLevel((zoomLevel + velocity * ZOOM_SPEED).clamp(0, 1));
         }
     }
 
@@ -358,7 +354,6 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
     )
 }
 
-export { HomeScreen };
 
 /**
  * Returns a number whose value is limited to the given range.

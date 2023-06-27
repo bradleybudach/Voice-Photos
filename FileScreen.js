@@ -8,7 +8,7 @@ import { styles, theme, gridStyles } from './stylesheet';
 
 const FILE_DIRECTORY = FileSystem.documentDirectory + "voicePhotos/";
 
-const FileDisplay = ({ navigation }) => {
+export const FileDisplay = ({ navigation }) => {
     const [images, setImages] = useState([]);
     const [viewedImage, setViewedImage] = useState(null);
     const [viewedAudio, setViewedAudio] = useState(null);
@@ -399,7 +399,7 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
     }
 
     const panGesture = event => {
-        console.log(event.nativeEvent);
+        //console.log(event.nativeEvent);
     }
 
     return (
@@ -409,7 +409,7 @@ const GridImagePreview = ({ photoUri, audioUri, goBack, deleteImage }) => {
             width: '100%',
             height: '100%'
         }}>
-            <PanGestureHandler onHandlerStateChange={panGesture}>
+            <PanGestureHandler>
                 <View style={styles.imageContainer}>
                     <ImageBackground source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }}>
                         <View style={{ alignItems: 'center', justifyContent: 'center', position: 'absolute', top: 0, left: 0, padding: 15, borderBottomEndRadius: 20, backgroundColor: 'rgba(20, 20, 20, 0.6)' }}><Text style={[styles.text, { color: theme.white }]}>Taken at: {hours}:{minutes} {timeCode}</Text></View>
@@ -476,5 +476,3 @@ const VoicePhoto = ({ uri, audio, tapEvent }) => {
         </View>
     );
 }
-
-export { FileDisplay };
