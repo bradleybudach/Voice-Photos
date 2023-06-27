@@ -137,17 +137,19 @@ const HomeScreen = ({ navigation }) => {
     setTakingPicture(true);
     Haptics.selectionAsync();
 
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: 6,
-    });
+    const [location, photo] = await Promise.all([
+      Location.getCurrentPositionAsync({
+        accuracy: 6,
+      }),
+      camera.current.takePictureAsync({ skipProcessing: true })
+    ]);
 
-    const photo = await camera.current.takePictureAsync();
-
-    writeExif(photo.uri, location.coords.latitude, location.coords.longitude, location.coords.altitude);
     setImagePreviewVisible(true);
     setCapturedImage(photo);
     setTakingPicture(false);
     setZoomLevel(0);
+
+    writeExif(photo.uri, location.coords.latitude, location.coords.longitude, location.coords.altitude);
   }
 
   const __retakePicture = () => {
@@ -470,7 +472,12 @@ const FileDisplay = ({ navigation }) => {
           }
         });
 
-        return [<View key={key} style={gridStyles.gridTitle}><Text style={styles.text}>{file.replaceAll('.', '/')}</Text></View>,
+        return [<View key={key} style={gridStyles.gridTitle}>
+          <Text style={styles.text}>{file.replaceAll('.', '/')}</Text>
+          <TouchableOpacity style={{ position: 'absolute', right: 10, backgroundColor: 'red', padding: 5, borderRadius: 10 }} onPress={() => {confirmDeleteDayAlert(file)}}>
+            <Text>Del</Text>
+          </TouchableOpacity>
+        </View>,
         await Promise.all(subFile.map(async (file) => {
           key++;
           if (file.endsWith("jpg")) {
@@ -603,6 +610,41 @@ const FileDisplay = ({ navigation }) => {
     setViewedAudio(null);
   }
 
+  const confirmDeleteDayAlert = (fileName) => {
+    Alert.alert(
+      'Delete',
+      'Are you sure you want to permanently delete all files from ' + fileName.replaceAll('.', '/') + '?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => { console.log('canceled') } ,
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: () => {__deleteDay(fileName)},
+          style: 'destructive'
+        }
+      ],
+      {
+        cancelable: true,
+      },
+    );
+  }
+
+
+  const __deleteDay = async (fileName) => {
+    const parentFolderURI = FILE_DIRECTORY + fileName; // the folder name is the part that comes right after the voicePhotos folder
+
+    const info = await FileSystem.getInfoAsync(parentFolderURI);
+    if (info.exists) {
+      FileSystem.deleteAsync(parentFolderURI);
+    }
+
+    __getImages(); // updates UI with changes
+  }
+
+
   const scrollViewRef = useRef();
   useEffect(() => { // scrolls to place where the photo was in the list
     if (viewedImage == null) {
@@ -622,20 +664,20 @@ const FileDisplay = ({ navigation }) => {
             <View style={{ flex: 1 }}>
               <TouchableOpacity style={[styles.button, {
                 position: 'absolute',
-                top: 40,
+                top: 20,
                 left: 15,
               }]} onPress={() => {
                 navigation.navigate('Home');
               }}><Text style={{ color: 'black', fontSize: 24, fontWeight: 'bold' }}>Back</Text></TouchableOpacity>
               {images.length > 0 && <TouchableOpacity style={[styles.button, {
                 position: 'absolute',
-                top: 40,
+                top: 20,
                 right: 15,
-                width: 200,
-              }]} onPress={__downloadFiles}><Text style={{ color: 'black', fontSize: 24, fontWeight: 'bold' }}>Download Files</Text></TouchableOpacity>}
+                width: 175,
+              }]} onPress={__downloadFiles}><Text style={{ color: 'black', fontSize: 24, fontWeight: 'bold' }}>Download All</Text></TouchableOpacity>}
             </View>
             {images.length > 0 ?
-              <View style={{ flex: 8 }}>
+              <View style={{ flex: 10 }}>
                 <ScrollView ref={scrollViewRef} onScroll={(event) => { setScrollYPosition(event.nativeEvent.contentOffset.y); }} scrollEventThrottle={160}>
                   <View style={{ marginHorizontal: 'auto', width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
                     {images}
@@ -837,7 +879,8 @@ const gridStyles = StyleSheet.create({
     paddingTop: 5,
     paddingBottom: 5,
     paddingLeft: 15,
-    marginTop: 10
+    marginTop: 10,
+    justifyContent: 'center',
   },
   gridItem: {
     flex: 1,
