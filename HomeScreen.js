@@ -329,17 +329,17 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
                 }
             </ImageBackground>
             <View style={styles.bottomBorder}>
-                {!isRecording ?
-                    <TouchableOpacity
-                        onPress={() => {
-                            __stopPlayback();
-                            retakePicture();
-                        }}
-                        style={[styles.button, { flex: 1, alignSelf: 'center', marginRight: 25 }]}>
-                        <Text style={styles.text}>Retake</Text>
-                    </TouchableOpacity> : <></>
+                {!isRecording && <TouchableOpacity
+                    onPress={() => {
+                        __stopPlayback();
+                        retakePicture();
+                    }}
+                    style={[styles.button, { flex: 1, alignSelf: 'center', marginRight: 15 }]}>
+                    <Text style={styles.text}>Retake</Text>
+                </TouchableOpacity>
                 }
-
+                
+                <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
                 <TouchableOpacity
                     onPress={__toggleRecording}
                     style={{
@@ -349,22 +349,22 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
                         overflow: 'hidden',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        alignSelf: 'center',
                         backgroundColor: theme.white,
                         borderWidth: 4,
                         borderColor: theme.gray
                     }}
                 ><ImageBackground source={isRecording ? require('./assets/stopIcon.png') : require('./assets/recordIcon.png')} style={{ width: '100%', height: '100%' }} /></TouchableOpacity>
+                </View>
 
-                {!isRecording ?
+                {!isRecording &&
                     <TouchableOpacity
                         onPress={() => {
                             __stopPlayback();
                             saveFiles();
                         }}
-                        style={[styles.button, { flex: 1, alignSelf: 'center', marginLeft: 25, backgroundColor: theme.gold }]}>
+                        style={[styles.button, { flex: 1, alignSelf: 'center', marginLeft: 15, backgroundColor: theme.gold }]}>
                         <Text style={styles.text}>Save</Text>
-                    </TouchableOpacity> : <></>
+                    </TouchableOpacity>
                 }
             </View>
         </View>

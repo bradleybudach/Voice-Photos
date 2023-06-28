@@ -5,6 +5,15 @@ import { NativeModulesProxy, EventEmitter, Subscription } from 'expo-modules-cor
 import ExifWriterModule from './src/ExifWriterModule';
 import { Double } from 'react-native/Libraries/Types/CodegenTypes';
 
-export function writeExif(uri: string, latitude : Double, longitude : Double, altitude : Double): string {
+/**
+ * Writes location data to a photo's exif data.
+ * 
+ * @param {string} uri The uri of the photo to write the exif to
+ * @param {Double} latitude The latitude location information
+ * @param {Double} longitude The longitude location information
+ * @param {Double} altitude The altitude location information
+ * @returns 
+ */
+export function writeExif(uri: string, latitude : Double, longitude : Double, altitude : Double): boolean {
   return ExifWriterModule.writeExif(uri, latitude, longitude, altitude);
 }

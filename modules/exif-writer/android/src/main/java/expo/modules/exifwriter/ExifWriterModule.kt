@@ -18,8 +18,7 @@ class ExifWriterModule : Module() {
     Name("ExifWriter")
 
     Function("writeExif") { uri: String, latitude : Double, longitude : Double, altitude : Double ->
-      writeLocationExif(uri, latitude, longitude, altitude);
-      "exif saved"
+      writeLocationExif(uri, latitude, longitude, altitude)
     }
   }
 
