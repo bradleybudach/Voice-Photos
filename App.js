@@ -1,10 +1,8 @@
-import { Camera } from 'expo-camera'
-
-import { Text, View, TouchableOpacity, Button, Alert, ImageBackground, Image, Animated, ScrollView, BackHandler } from 'react-native';
-
-import { Audio } from "expo-av";
+import { Text, View, Button } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Audio } from "expo-av";
+import { Camera } from 'expo-camera'
 import * as Location from 'expo-location';
 import { HomeScreen } from './HomeScreen';
 import { FileDisplay } from './FileScreen';

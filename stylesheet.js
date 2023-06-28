@@ -34,6 +34,35 @@ const gridStyles = StyleSheet.create({
     gridImage: {
         width: '100%',
         aspectRatio: 1,
+    },
+    downloadButton: {
+        position: 'absolute',
+        right: 50,
+        bottom: 5,
+        borderWidth: 2,
+        borderColor: theme.black,
+        backgroundColor: theme.gold,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    deleteButton: {
+        position: 'absolute',
+        right: 10,
+        bottom: 5,
+        borderWidth: 2,
+        borderColor: theme.black,
+        backgroundColor: theme.red,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    audioIndicator: {
+        position: 'absolute',
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+        borderTopRightRadius: 7,
+        bottom: 0,
+        left: 0
     }
 });
 

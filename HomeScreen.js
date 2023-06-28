@@ -14,20 +14,23 @@ const FILE_DIRECTORY = FileSystem.documentDirectory + "voicePhotos/";
 const ZOOM_SPEED = 12;
 
 export const HomeScreen = ({ navigation }) => {
+    //UI State variables:
     const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
     const [capturedImage, setCapturedImage] = useState(null);
     const [capturedAudio, setCapturedAudio] = useState(null);
     const [zoomLevel, setZoomLevel] = useState(0);
     const [takingPicture, setTakingPicture] = useState(false);
 
-    useEffect(() => {
-        const backAction = () => { // back button handling
+    const isFocused = useIsFocused();
+    const camera = useRef(null);
+
+    useEffect(() => { // back button handling
+        const backAction = () => {
             if (imagePreviewVisible) {
-                __retakePicture();
+                __retakePicture(); // go back to picture screen if on preview screen
             } else {
-                Haptics.notificationAsync(
-                    Haptics.NotificationFeedbackType.Error
-                );
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); // vibration on alert
+
                 Alert.alert('Hold on!', 'Are you sure you want to exit the app?', [
                     {
                         text: 'Cancel',
@@ -48,18 +51,21 @@ export const HomeScreen = ({ navigation }) => {
         return () => backHandler.remove();
     }, [imagePreviewVisible]);
 
-    const isFocused = useIsFocused();
-
-    const camera = useRef(null);
-
     // Commands:
     let recording = null;
+
+    /**
+    * Starts recording audio.
+    */
     const __startRecordAudio = async () => {
         recording = new Audio.Recording();
         await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
         await recording.startAsync();
     }
 
+    /**
+    * Ends audio recording and sets the capturedAudio.
+    */
     const __endRecordAudio = async () => {
         try {
             await recording.stopAndUnloadAsync();
@@ -70,44 +76,57 @@ export const HomeScreen = ({ navigation }) => {
 
     }
 
+    /**
+    * Controls camera zoom from pinch gesture.
+    */
     const __onPinchEvent = event => {
         let velocity = event.nativeEvent.velocity;
 
-        if (Math.abs(velocity) > 0.0003) {
-            setZoomLevel((zoomLevel + velocity * ZOOM_SPEED).clamp(0, 1));
+        if (Math.abs(velocity) > 0.0003) { // doesn't register changes unless velocity is over threshold to prevent jittering
+            setZoomLevel((zoomLevel + velocity * ZOOM_SPEED).clamp(0, 1)); // clamps zoom between 0 and 1
         }
     }
 
+    /**
+    * Takes a picture with the camera and writes location data to the exif.
+    */
     const __takePicture = async () => {
-        if (!camera) { return; }
+        if (!camera) { return; } // exit if camera ref not set
 
-        setTakingPicture(true);
-        Haptics.selectionAsync();
+        setTakingPicture(true); // changes UI while picture is taking
+        Haptics.selectionAsync(); // vibration on take picture button presset
 
+        // gets location and picture simultaneously
         const [location, photo] = await Promise.all([
-            Location.getCurrentPositionAsync({
-                accuracy: 6,
-            }),
+            Location.getCurrentPositionAsync({ accuracy: 6 }),
             camera.current.takePictureAsync({ skipProcessing: true })
         ]);
 
+        // shows image preview screen:
         setImagePreviewVisible(true);
         setCapturedImage(photo);
+
+        // resets UI:
         setTakingPicture(false);
         setZoomLevel(0);
 
-        writeExif(photo.uri, location.coords.latitude, location.coords.longitude, location.coords.altitude);
+        writeExif(photo.uri, location.coords.latitude, location.coords.longitude, location.coords.altitude); // writes location data to the picture
     }
 
+    /**
+    * Returns from preview screen to camera screen.
+    */
     const __retakePicture = () => {
         setCapturedImage(null);
         setCapturedAudio(null);
         setImagePreviewVisible(false);
     }
 
+    /**
+    * Saves image file to local storage.
+    */
     const __saveFiles = async () => {
-        if (!capturedImage) return;
-        //FileSystem.deleteAsync(FILE_DIRECTORY);
+        if (!capturedImage) return; // return if there is no image to save
 
         const directoryInfo = await FileSystem.getInfoAsync(FILE_DIRECTORY);
         if (!directoryInfo.exists) { // check if the main image directory exists or needs to be created.
@@ -115,31 +134,30 @@ export const HomeScreen = ({ navigation }) => {
         }
 
         let time = new Date(); // gets the current time
-        let newFile = FILE_DIRECTORY + time.getMonth() + '.' + time.getDate() + '.' + time.getFullYear() + "/"; // creates file for the day
+        let dayFile = FILE_DIRECTORY + time.getMonth() + '.' + time.getDate() + '.' + time.getFullYear() + "/"; // creates file for the day
 
-        const newFileInfo = await FileSystem.getInfoAsync(newFile); // gets info about the day file
+        const newFileInfo = await FileSystem.getInfoAsync(dayFile); // gets info about the day file
         if (!newFileInfo.exists) { // if the file doesn't exist yet
-            console.log("directory doesn't exist, creating...");
-            await FileSystem.makeDirectoryAsync(newFile); // makes a file for the current time to store the audio and image
+            await FileSystem.makeDirectoryAsync(dayFile); // makes a file for the current time to store the audio and image
         }
 
         if (capturedAudio) { // if there is also an audio file to be stored
-            let voicePhotoFile = newFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '/';
+            let voicePhotoFile = dayFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '/';
             await FileSystem.makeDirectoryAsync(voicePhotoFile);
 
             await FileSystem.moveAsync({ // stores the image in the file
                 from: capturedImage.uri,
-                to: voicePhotoFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current hour+minute+second as name
+                to: voicePhotoFile + time.getMonth() + '.' + time.getDate() + '_' + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current month+day_hour+minute+second as name
             });
 
             await FileSystem.moveAsync({ // stores the audio in the file
                 from: capturedAudio.getURI(),
-                to: voicePhotoFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + ".mp3"
+                to: voicePhotoFile + time.getMonth() + '.' + time.getDate() + '_' + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + ".mp3" // stores audio with current month+day_hour+minute+second as name
             });
         } else {
             await FileSystem.moveAsync({ // stores the image in the file
                 from: capturedImage.uri,
-                to: newFile + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current hour+minute+second as name
+                to: dayFile + time.getMonth() + '.' + time.getDate() + '_' + time.getHours() + '.' + time.getMinutes() + '.' + time.getSeconds() + '.jpg' // stores image with current month+day_hour+minute+second as name
             });
         }
 
@@ -149,6 +167,7 @@ export const HomeScreen = ({ navigation }) => {
         setCapturedAudio(null);
     }
 
+    //UI: 
     return (
         <GestureHandlerRootView style={styles.container}>
             {imagePreviewVisible && capturedImage ? (
@@ -253,7 +272,6 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
             ));
             setIsPlaybackPaused(false);
         } else {
-            const status = await currentSound.sound.getStatusAsync();
             if (!isPlaybackPaused) {
                 await currentSound.sound.pauseAsync();
                 setIsPlaybackPaused(true);
@@ -348,7 +366,6 @@ const CameraPreview = ({ photo, audio, retakePicture, saveFiles, recordAudio, en
                         <Text style={styles.text}>Save</Text>
                     </TouchableOpacity> : <></>
                 }
-
             </View>
         </View>
     )
